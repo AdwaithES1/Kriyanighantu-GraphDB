@@ -53,7 +53,7 @@ Do not run `pip install -r requirements.txt` on the system Python. Debian and Ub
 - **Inside a container:** the app listens on port 5000 of that container. To reach it from other machines, the container
   must publish that port (for example `docker run -p 5000:5000 …`); ask whoever manages the server. Open
   `http://<server-ip>:5000`.
-- **Settings:** `APP_PORT` (default 5000) and `WORKERS` (default 2) are read from the environment.
+- **Settings:** `APP_PORT` (default 5000) and `WORKERS` (default 2) are read from `.env` or the environment. If port 5000 is taken, set e.g. `APP_PORT=5007` in `.env`.
 - **Change the password later:** delete `.linux/neo4j/data`, update `.env`, and run `sh setup_linux.sh` again.
 
 ## Windows (this computer)
