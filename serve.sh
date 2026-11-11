@@ -7,6 +7,12 @@ cd "$(dirname "$0")"
 PY=python3
 [ -x .venv/bin/python ] && PY=.venv/bin/python
 
+# Neo4j installed by setup_linux.sh: start it if it is not running (no systemd needed).
+if [ -d .linux/neo4j ]; then
+    export JAVA_HOME="$PWD/.linux/jdk" NEO4J_HOME="$PWD/.linux/neo4j" NEO4J_URI=bolt://localhost:7687
+    .linux/neo4j/bin/neo4j status > /dev/null 2>&1 || .linux/neo4j/bin/neo4j start
+fi
+
 [ -f output/graph.json ] || "$PY" pipeline/build_graph.py
 "$PY" pipeline/load_neo4j.py --if-empty --wait 180
 

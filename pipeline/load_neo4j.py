@@ -81,7 +81,8 @@ def main():
 
     graph = json.loads(GRAPH.read_text(encoding="utf-8"))
     uri, auth, database = connection()
-    with GraphDatabase.driver(uri, auth=auth) as driver:
+    # Notifications off: on an empty database Neo4j warns that the Verb label does not exist yet.
+    with GraphDatabase.driver(uri, auth=auth, notifications_min_severity="OFF") as driver:
         wait_for(driver, args.wait)
         with driver.session(database=database) as session:
             if args.if_empty and session.run("MATCH (v:Verb) RETURN count(v) AS c").single()["c"]:
