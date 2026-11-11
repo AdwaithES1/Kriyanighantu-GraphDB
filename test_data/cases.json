@@ -1,0 +1,336 @@
+[
+  {
+    "id": "T01",
+    "kind": "pair: same verb, different context",
+    "target_verb": "ग्लेपते",
+    "word": "ग्लेपते",
+    "text": "सा ग्रामे क्लाम्यति । राजा ग्लानौ ग्लेपते । शिष्यः अपि खिन्ते ।",
+    "expected_meaning": "ग्लानि",
+    "expected_shade": "S194.1",
+    "expected_gloss": "be averse or reluctant or unwilling or disinclined to do anything, be enervated or weary, be exhausted or fatigued, become bothered or crestfallen, become cast down or desponded, become disconsolate or disheartened, become dismal or distressed, become gloomy or low-spirited, decay, decline, decrease or deplete, experience weakness, fade away, faint, feel debility, feel disappointed or depressed, feel languor or lassitude, feel miserable or sad, feel tired or sick",
+    "context_cues": [
+      "ग्लानौ",
+      "क्लाम्यति",
+      "खिन्ते"
+    ],
+    "note": "Paired with the other paragraph for ग्लेपते."
+  },
+  {
+    "id": "T02",
+    "kind": "pair: same verb, different context",
+    "target_verb": "ग्लेपते",
+    "word": "ग्लेपते",
+    "text": "सः उद्याने त्सरति । शिष्यः गतौ ग्लेपते । राजा अपि ध्वञ्जति ।",
+    "expected_meaning": "गति",
+    "expected_shade": "S181.9",
+    "expected_gloss": "advance, approach, be in motion, be off, budge, carry on, commence, depart, embark on, exit, go, go ahead, go away, go on, head off, keep on, leave, move, move about, move off, move on, move out, pace, proceed, progress, roam, set forth, set off, set out, start, start off, start out, step, stray, stride, stroll, travel, tread, walk, walk off, wander",
+    "context_cues": [
+      "गतौ",
+      "त्सरति",
+      "ध्वञ्जति"
+    ],
+    "note": "Paired with the other paragraph for ग्लेपते."
+  },
+  {
+    "id": "T03",
+    "kind": "pair: same verb, different context",
+    "target_verb": "गृह्णाति",
+    "word": "गृह्णाति",
+    "text": "राजा नद्याः तीरे चण्डते । वृक्षः क्रोधे गृह्णाति । बालकः अपि गुध्नाति ।",
+    "expected_meaning": "क्रोध",
+    "expected_shade": "S165.1",
+    "expected_gloss": "annoy, be angry, be fuming, be furious, be indignant, be irate, become enraged, become infuriated, become ireful, become irritated, become livid, become violent, become wrathful, exasperate, get on your nerves, incense, madden",
+    "context_cues": [
+      "क्रोधे",
+      "चण्डते",
+      "गुध्नाति"
+    ],
+    "note": "Paired with the other paragraph for गृह्णाति."
+  },
+  {
+    "id": "T04",
+    "kind": "pair: same verb, different context",
+    "target_verb": "गृह्णाति",
+    "word": "गृह्णाति",
+    "text": "बालकः उद्याने जानाति । वृक्षः ज्ञाने गृह्णाति । सः अपि उपलभते ।",
+    "expected_meaning": "ज्ञान",
+    "expected_shade": "S219.1",
+    "expected_gloss": "know, understand, appreciate, be acquainted with, be aware of, be friendly with, be knowledgeable about, be on familiar terms with, come across, comprehend, discern, distinguish, experience, feel, follow, get, go through, grasp, have knowledge of, identify, learn, live through, make out, meditate, perceive, realise, recognise, see, sense, think",
+    "context_cues": [
+      "ज्ञाने",
+      "जानाति",
+      "उपलभते"
+    ],
+    "note": "Paired with the other paragraph for गृह्णाति."
+  },
+  {
+    "id": "T05",
+    "kind": "pair: same verb, different context",
+    "target_verb": "ध्रायति",
+    "word": "ध्रायति",
+    "text": "सः गृहे चकति । राजा तृप्तौ ध्रायति । वृक्षः अपि तृप्नोति ।",
+    "expected_meaning": "तृप्ति",
+    "expected_shade": "S230.1",
+    "expected_gloss": "be contended, be pleased, be satisfied or satiated, become gratified, keep happy",
+    "context_cues": [
+      "तृप्तौ",
+      "चकति",
+      "तृप्नोति"
+    ],
+    "note": "Paired with the other paragraph for ध्रायति."
+  },
+  {
+    "id": "T06",
+    "kind": "pair: same verb, different context",
+    "target_verb": "ध्रायति",
+    "word": "ध्रायति",
+    "text": "नरः उद्याने धिन्वति । वृक्षः तर्पणे ध्रायति । राजा अपि धिनोति ।",
+    "expected_meaning": "तर्पण",
+    "expected_shade": "S224.2",
+    "expected_gloss": "appease, assuage, assure, be pleased or satisfied, calm down, conciliate, content, delight, entertain, fulfil, give pleasure to, gladden, gratify, keep or make happy, mollify, offer fuel for the sacred fire, pacify, placate, please, present libations of water to the gods and to the deceased, propitiate, quench, sate, satiate, satisfy, soothe",
+    "context_cues": [
+      "तर्पणे",
+      "धिन्वति",
+      "धिनोति"
+    ],
+    "note": "Paired with the other paragraph for ध्रायति."
+  },
+  {
+    "id": "T07",
+    "kind": "pair: same verb, different context",
+    "target_verb": "गेपते",
+    "word": "गेपते",
+    "text": "बालकः नगरे छङ्गयति । जनः गतौ गेपते । देवदत्तः अपि चयते ।",
+    "expected_meaning": "गति",
+    "expected_shade": "S181.9",
+    "expected_gloss": "advance, approach, be in motion, be off, budge, carry on, commence, depart, embark on, exit, go, go ahead, go away, go on, head off, keep on, leave, move, move about, move off, move on, move out, pace, proceed, progress, roam, set forth, set off, set out, start, start off, start out, step, stray, stride, stroll, travel, tread, walk, walk off, wander",
+    "context_cues": [
+      "गतौ",
+      "छङ्गयति",
+      "चयते"
+    ],
+    "note": "Paired with the other paragraph for गेपते."
+  },
+  {
+    "id": "T08",
+    "kind": "pair: same verb, different context",
+    "target_verb": "गेपते",
+    "word": "गेपते",
+    "text": "मुनिः नगरे क्ष्मायते । नरः कम्पे गेपते । राजा अपि एजति ।",
+    "expected_meaning": "कम्प",
+    "expected_shade": "S141.1",
+    "expected_gloss": "agitate, bounce, fluctuate, go, jerk, jiggle, jolt, judder, lean, move, move back and forth, move up and down, oscillate, quake, quaver, quiver, rock, shake, shift, shiver, shudder, stir, sway, swing, tremble, vacillate, vibrate, waggle, wobble",
+    "context_cues": [
+      "कम्पे",
+      "क्ष्मायते",
+      "एजति"
+    ],
+    "note": "Paired with the other paragraph for गेपते."
+  },
+  {
+    "id": "T09",
+    "kind": "pair: same verb, different context",
+    "target_verb": "चर्चयति",
+    "word": "चर्चयति",
+    "text": "सा नगरे अनुलिम्पति । राजा चर्चायाम् चर्चयति । सः अपि देग्धि ।",
+    "expected_meaning": "चर्चा",
+    "expected_shade": "S200.1",
+    "expected_gloss": "analyse, blame, censure, cogitate, consider, criticise, debate, deliberate, discuss, dispute, examine, investigate, learn, negotiate, ponder, reflect, review, ruminate, say, study, talk over",
+    "context_cues": [
+      "चर्चायाम्",
+      "अनुलिम्पति",
+      "देग्धि"
+    ],
+    "note": "Paired with the other paragraph for चर्चयति."
+  },
+  {
+    "id": "T10",
+    "kind": "pair: same verb, different context",
+    "target_verb": "चर्चयति",
+    "word": "चर्चयति",
+    "text": "देवदत्तः ग्रामे उपयुङ्क्ते । शिष्यः अध्ययने चर्चयति । राजा अपि आमनति ।",
+    "expected_meaning": "अध्ययन",
+    "expected_shade": "S11.1",
+    "expected_gloss": "absorb, acquire, analyse, bone up, consider, debate, deliberate, delve into, discuss, examine, experiment, explore, gain knowledge, investigate, learn, look into, mug up, practise, probe, read, recite, research, review, revise, scrutinise, study, take in",
+    "context_cues": [
+      "अध्ययने",
+      "उपयुङ्क्ते",
+      "आमनति"
+    ],
+    "note": "Paired with the other paragraph for चर्चयति."
+  },
+  {
+    "id": "T11",
+    "kind": "pair: same verb, different context",
+    "target_verb": "उद्युङ्क्ते",
+    "word": "उद्युङ्क्ते",
+    "text": "मुनिः नगरे उद्गारयते । शिष्यः उद्यमे उद्युङ्क्ते । देवदत्तः अपि अडति ।",
+    "expected_meaning": "उद्यम",
+    "expected_shade": "S112.1",
+    "expected_gloss": "endeavour, aim, attempt, do your best, do your utmost, exert, labour, make an effort, put yourself out, seek, strive, struggle, try, undertake, work hard",
+    "context_cues": [
+      "उद्यमे",
+      "उद्गारयते",
+      "अडति"
+    ],
+    "note": "Paired with the other paragraph for उद्युङ्क्ते."
+  },
+  {
+    "id": "T12",
+    "kind": "pair: same verb, different context",
+    "target_verb": "उद्युङ्क्ते",
+    "word": "उद्युङ्क्ते",
+    "text": "बालकः नद्याः तीरे उत्सहते । राजा उत्साहे उद्युङ्क्ते । सः अपि उत्साहयति ।",
+    "expected_meaning": "उत्साह",
+    "expected_shade": "S108.1",
+    "expected_gloss": "attempt, be enthusiastic about, be passionate, do your best, endeavour, excite, exert yourself, labour, make every effort, motivate, persevere, rave about, spur to action, stimulate, stir up, strive, struggle, try, undertake, venture, whip up support, work hard",
+    "context_cues": [
+      "उत्साहे",
+      "उत्सहते",
+      "उत्साहयति"
+    ],
+    "note": "Paired with the other paragraph for उद्युङ्क्ते."
+  },
+  {
+    "id": "T13",
+    "kind": "pair: same verb, different context",
+    "target_verb": "अपकरोति",
+    "word": "अपकरोति",
+    "text": "वृक्षः वने द्रुह्यति । नरः जिघांसने अपकरोति । सा अपि अपराध्नोति ।",
+    "expected_meaning": "जिघांसन",
+    "expected_shade": "S214.1",
+    "expected_gloss": "avenge, be desirous of destroying or ruining, bear malice or hatred, hit back, intend to hurt, intend to strike or slay or destroy, plot to kill, prepare to retaliate, revenge, strike back",
+    "context_cues": [
+      "जिघांसने",
+      "द्रुह्यति",
+      "अपराध्नोति"
+    ],
+    "note": "Paired with the other paragraph for अपकरोति."
+  },
+  {
+    "id": "T14",
+    "kind": "pair: same verb, different context",
+    "target_verb": "अपकरोति",
+    "word": "अपकरोति",
+    "text": "जनः नद्याः तीरे उपक्रोशति । राजा निन्दायाम् अपकरोति । देवदत्तः अपि गल्हति ।",
+    "expected_meaning": "निन्दा",
+    "expected_shade": "S151.1",
+    "expected_gloss": "abuse, blame, censure, condemn, criticise, defame, degrade, demean, denounce, deride, disgrace, dishonour, disparage, embarrass, find fault with, humiliate, insult, laugh at, look down upon, mock, reproach, revile, ridicule, satirise, scorn, shame, slam, use foul language",
+    "context_cues": [
+      "निन्दायाम्",
+      "उपक्रोशति",
+      "गल्हति"
+    ],
+    "note": "Paired with the other paragraph for अपकरोति."
+  },
+  {
+    "id": "T15",
+    "kind": "distractor: other meaning's cues one sentence away",
+    "target_verb": "चणति",
+    "word": "चणति",
+    "text": "देवदत्तः उद्याने अपवर्जयति । जनः दाने चणति । नरः अपि ददाति । शिष्यः वने ध्वंसते छङ्गयति च ।",
+    "expected_meaning": "दान",
+    "expected_shade": "S241.2",
+    "expected_gloss": "accord, afford, allocate, allot, assign, award, bequeath, bestow, circulate, confer, contribute, convey, dedicate, deliver, devote, dispense, disseminate, distribute, donate, furnish, give, grant, hand, impart, lend, offer, pass, present, provide, sacrifice, supply, surrender",
+    "context_cues": [
+      "दाने",
+      "अपवर्जयति",
+      "ददाति"
+    ],
+    "note": "The last sentence carries cues for गति instead."
+  },
+  {
+    "id": "T16",
+    "kind": "distractor: other meaning's cues one sentence away",
+    "target_verb": "अर्जते",
+    "word": "अर्जते",
+    "text": "बालकः प्रातः अर्जयति । सा अर्जने अर्जते । वृक्षः अपि अर्जति । बालकः नगरे अटति ईयते च ।",
+    "expected_meaning": "अर्जन",
+    "expected_shade": "S38.1",
+    "expected_gloss": "acquire, be worthy of, bring in, earn, gain, get, net, obtain, procure, receive, take home, work for",
+    "context_cues": [
+      "अर्जने",
+      "अर्जयति",
+      "अर्जति"
+    ],
+    "note": "The last sentence carries cues for गति instead."
+  },
+  {
+    "id": "T17",
+    "kind": "inflected: plural form in the text",
+    "target_verb": "अञ्चति",
+    "word": "अञ्चन्ति",
+    "text": "सा नगरे जिहीते । सः गतौ अञ्चन्ति । राजा अपि धर्जति ।",
+    "expected_meaning": "गति",
+    "expected_shade": "S181.9",
+    "expected_gloss": "advance, approach, be in motion, be off, budge, carry on, commence, depart, embark on, exit, go, go ahead, go away, go on, head off, keep on, leave, move, move about, move off, move on, move out, pace, proceed, progress, roam, set forth, set off, set out, start, start off, start out, step, stray, stride, stroll, travel, tread, walk, walk off, wander",
+    "context_cues": [
+      "गतौ",
+      "जिहीते",
+      "धर्जति"
+    ],
+    "note": "अञ्चन्ति must be matched back to अञ्चति."
+  },
+  {
+    "id": "T18",
+    "kind": "inflected: plural form in the text",
+    "target_verb": "दीव्यति",
+    "word": "दीव्यन्ति",
+    "text": "जनः उद्याने घृणोति । वृक्षः दीप्तौ दीव्यन्ति । मुनिः अपि द्योतते ।",
+    "expected_meaning": "दीप्ति",
+    "expected_shade": "S245.2",
+    "expected_gloss": "buff up, burnish, charm, do well, excel, flash, flicker, gleam, glimmer, glisten, glitter, glow, have a gift for, polish, scintillate, shimmer, shine, sparkle, stand out, twinkle",
+    "context_cues": [
+      "दीप्तौ",
+      "घृणोति",
+      "द्योतते"
+    ],
+    "note": "दीव्यन्ति must be matched back to दीव्यति."
+  },
+  {
+    "id": "T19",
+    "kind": "two occurrences: one meaning each",
+    "target_verb": "गर्हते",
+    "word": "गर्हते",
+    "text": "सः प्रातः जुगुप्सते । वृक्षः निन्दायाम् गर्हते । शिष्यः अपि कुत्सयते ।\nबालकः नगरे गृहयते । वृक्षः आदाने गर्हते । जनः अपि घृण्णते ।",
+    "expected_meaning": "निन्दा",
+    "expected_shade": "S151.1",
+    "expected_gloss": "abuse, blame, censure, condemn, criticise, defame, degrade, demean, denounce, deride, disgrace, dishonour, disparage, embarrass, find fault with, humiliate, insult, laugh at, look down upon, mock, reproach, revile, ridicule, satirise, scorn, shame, slam, use foul language",
+    "context_cues": [
+      "निन्दायाम्",
+      "जुगुप्सते",
+      "कुत्सयते",
+      "आदाने",
+      "गृहयते",
+      "घृण्णते"
+    ],
+    "note": "First occurrence expects निन्दा, second expects आदान.",
+    "expected_per_occurrence": [
+      "निन्दा",
+      "आदान"
+    ]
+  },
+  {
+    "id": "T20",
+    "kind": "two occurrences: one meaning each",
+    "target_verb": "जेहते",
+    "word": "जेहते",
+    "text": "वृक्षः वने उत्सहते । मुनिः उत्साहे जेहते । देवदत्तः अपि उत्साहयति ।\nनरः ग्रामे केटति । शिष्यः गतौ जेहते । वृक्षः अपि त्रौकते ।",
+    "expected_meaning": "उत्साह",
+    "expected_shade": "S108.1",
+    "expected_gloss": "attempt, be enthusiastic about, be passionate, do your best, endeavour, excite, exert yourself, labour, make every effort, motivate, persevere, rave about, spur to action, stimulate, stir up, strive, struggle, try, undertake, venture, whip up support, work hard",
+    "context_cues": [
+      "उत्साहे",
+      "उत्सहते",
+      "उत्साहयति",
+      "गतौ",
+      "केटति",
+      "त्रौकते"
+    ],
+    "note": "First occurrence expects उत्साह, second expects गति.",
+    "expected_per_occurrence": [
+      "उत्साह",
+      "गति"
+    ]
+  }
+]

@@ -1,0 +1,9 @@
+.git
+.env
+.venv
+.neo4j
+.pytest_cache
+**/__pycache__
+output
+*.bat
+*.ps1

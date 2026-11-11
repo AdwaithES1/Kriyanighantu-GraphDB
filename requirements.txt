@@ -1,0 +1,8 @@
+# Python 3.12. Install with:  python -m pip install -r requirements.txt
+flask==3.1.3
+neo4j==6.4.1
+pandas==3.1.1
+openpyxl==3.1.5
+pymupdf==2.1
+pytest==9.2.0
+gunicorn==23.0.0 ; sys_platform != "win32"   # production web server (Linux / container)

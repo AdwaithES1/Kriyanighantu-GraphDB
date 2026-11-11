@@ -1,0 +1,20 @@
+# secrets
+.env
+
+# local environments and the private Windows Neo4j install
+.venv/
+.neo4j/
+
+# generated (rebuild with: python pipeline/build_graph.py)
+output/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

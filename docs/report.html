@@ -1,0 +1,103 @@
+<h1>Kriyānighaṇṭu Synonym Finder</h1>
+<p class="sub">A context-aware synonym finder for Sanskrit verbs, built on a Neo4j graph database</p>
+
+<h2>1. Problem</h2>
+<p>A Sanskrit verb can carry several meanings, and its synonyms depend on which one is meant. गृह्णाति may mean
+<i>to seize</i>, <i>to understand</i> or <i>to be angry</i> depending on the passage. Given a passage (typed, a .txt file
+or a PDF) and one word in it, the system decides which meaning the context points to and returns the best synonym
+for that meaning from the Kriyānighaṇṭu dataset. When it cannot, it says why.</p>
+
+<h2>2. Data</h2>
+<p>Three spreadsheets were provided, with no ready-made relations between meanings:</p>
+<table>
+<tr><th>File</th><th>Contents</th></tr>
+<tr><td>Verb-Entries.xlsx</td><td>Verbs, their forms, examples, meaning labels (e.g. गतौ) and See Also references</td></tr>
+<tr><td>Look-up entry.xlsx</td><td>Each meaning label with its English gloss</td></tr>
+<tr><td>Root-Entry.xlsx</td><td>Verbal roots (dhātu), gaṇa and root meaning</td></tr>
+</table>
+
+<h2>3. Graph model</h2>
+<p>The schema follows the project's demo schema: a <b>Verb</b> reaches a <b>Sense</b> only through a <b>Shade</b>.
+Two verbs are synonyms in a context when they share a Shade.</p>
+<pre>(:Verb)-[:HAS_SHADE {id: V808.S219.1, confidence, sources}]-&gt;(:Shade)&lt;-[:HAS_SHADE]-(:Sense)
+(:Verb)-[:LISTED_UNDER]-&gt;(:LookUp)-[:DENOTES]-&gt;(:Shade)
+(:Verb)-[:FROM_ROOT]-&gt;(:Root)        (:Verb)-[:SEE_ALSO]-&gt;(:Verb)</pre>
+<table>
+<tr><th>Node</th><th>Meaning</th><th>Count</th></tr>
+<tr><td>Sense</td><td>One atomic meaning, named by its lemma, e.g. गति (motion)</td><td>546</td></tr>
+<tr><td>Shade</td><td>One distinct English gloss block under a Sense</td><td>577</td></tr>
+<tr><td>Verb</td><td>A headword with its merged spelling and voice variants</td><td>1,525</td></tr>
+<tr><td>LookUp</td><td>The original dataset label, kept for traceability</td><td>583</td></tr>
+<tr><td>Root</td><td>Verbal root</td><td>1,298</td></tr>
+</table>
+<p>In total there are 6,093 relationships, including 1,759 Verb–Shade links.</p>
+
+<h2>4. Building the relations</h2>
+<p>The data gives labels, not relations, so the pipeline (<code>pipeline/build_graph.py</code>) derives them:</p>
+<ol>
+<li><b>Split composite labels.</b> A label such as <i>गतिहिंसयोः</i> names two meanings at once. A curated
+table of compounds, qualifiers and aliases (<code>pipeline/lexicon.py</code>) splits it into गति + हिंसा.</li>
+<li><b>Divide the English gloss.</b> The gloss is assigned to each part: from a gloss the same meaning has elsewhere
+(only if another entry confirms it), otherwise by position (confidence 0.95), otherwise marked ambiguous (0.5).</li>
+<li><b>Merge near-duplicates.</b> Glosses under one Sense with word overlap of 80% or more become one Shade.</li>
+<li><b>Merge verb variants.</b> Forms listed together are merged, but prefixed verbs (प्राणिति / अपानिति) stay separate.</li>
+<li><b>Fill gaps.</b> Verbs without a label inherit meanings through See Also (confidence 0.9) or their root (0.5).
+Every link records its confidence and source.</li>
+</ol>
+
+<h2>5. Answering a query</h2>
+<ol>
+<li><b>Read the input.</b> Statement text as is; .txt as UTF-8; PDF through PyMuPDF, with repair of
+broken Devanagari vowel signs and line wraps.</li>
+<li><b>Find the word.</b> Each occurrence is located, including inflected forms (चलन्ति → चलति).</li>
+<li><b>Collect context.</b> Other known verbs and meaning words in the passage are weighted by distance:
+same sentence 1.0, neighbouring sentence 0.5, elsewhere 0.1.</li>
+<li><b>Score each meaning.</b> Context words are compared with each candidate Shade through their English glosses
+(IDF-weighted cosine similarity). A meaning word from the dataset (e.g. कम्पे) adds a direct bonus.</li>
+<li><b>Choose.</b> The highest-scoring meaning is kept if the evidence is strong enough; otherwise the answer is marked
+as a best guess.</li>
+<li><b>Rank synonyms.</b> Verbs sharing that Shade are ordered by link confidence, then by how many other meanings
+they share with the word, then by fewest unrelated meanings. If none exists, verbs of the same Sense are offered as
+<i>related</i>.</li>
+</ol>
+<p>When there is no answer, the app explains the reason: the word is not in the text, the verb is outside the dataset
+(which covers अ to न), it is a noun, the verb has no recorded meaning, or no other verb shares its meaning.
+It also suggests close spellings.</p>
+
+<h2 style="page-break-before: always">6. Worked example</h2>
+<p>Input statement: <b>मुनिः नगरे क्ष्मायते । नरः कम्पे गेपते । राजा अपि एजति ।</b> &nbsp; Word: <b>गेपते</b></p>
+<table>
+<tr><th>Step</th><th>Result</th></tr>
+<tr><td>Meanings of गेपते in the graph</td><td>गति (motion) and कम्प (trembling): two Shades</td></tr>
+<tr><td>Context found</td><td>कम्पे, a meaning word in the same sentence (weight 1.0); क्ष्मायते and एजति, verbs in the
+neighbouring sentences (0.5), glossed <i>agitate, jerk, jolt</i></td></tr>
+<tr><td>Scores</td><td>कम्प 3.0, गति 0.09, so कम्प is selected</td></tr>
+<tr><td>Answer</td><td>Best synonym <b>केपते</b>, with the other verbs of the same Shade listed as alternatives</td></tr>
+</table>
+<p>With <i>गतौ</i> in place of <i>कम्पे</i> and motion verbs around it (test case T07), the same word resolves to गति instead.</p>
+
+<h2>7. Implementation</h2>
+<table>
+<tr><th>Part</th><th>Technology</th></tr>
+<tr><td>Database</td><td>Neo4j 2025.12 Community, with uniqueness constraints and a full-text index on glosses</td></tr>
+<tr><td>Pipeline and logic</td><td>Python 3.12, pandas, neo4j driver, PyMuPDF</td></tr>
+<tr><td>Web app</td><td>Flask with one HTML page: choose Statement, Text file or PDF, enter the word, get the answer</td></tr>
+<tr><td>Deployment</td><td>Windows: <code>start.bat</code>. Linux / network: Docker Compose (Neo4j + gunicorn)</td></tr>
+<tr><td>Tests</td><td>17 unit tests, plus 20 generated paragraph cases in <code>test_data/</code></td></tr>
+</table>
+
+<h2>8. Evaluation</h2>
+<p>Twenty paragraphs were generated from the dataset. They place the same verb in contexts for different meanings,
+add distracting cues one sentence away, use plural forms, and repeat a word twice with two meanings. All 22
+occurrences received the intended meaning, and the PDF versions gave the same results. These cases contain the
+dataset's own meaning labels, so they confirm that the mechanism works rather than measure accuracy on real texts.
+No labelled Sanskrit corpus exists for that yet.</p>
+
+<h2>9. Limitations and next steps</h2>
+<ul>
+<li>The verb list covers अ to न only. Common verbs such as वदति and भवति are absent.</li>
+<li>Only present-tense endings are recognised, not other tenses, participles or most sandhi.</li>
+<li>146 verbs have no usable meaning and 120 Shades have no English gloss.</li>
+<li>Context is matched by words, not by sentence structure.</li>
+<li>Next steps: review <code>lexicon.py</code> with a Sanskritist, add a morphological analyser, build a labelled test set.</li>
+</ul>
