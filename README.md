@@ -5,56 +5,48 @@ best-suited Sanskrit synonym from a Neo4j graph built from the Kriyānighaṇṭ
 
 How it works, in two pages: [docs/report.pdf](docs/report.pdf).
 
-## Quick start: Linux server with Docker (for the college network)
+## Host it on a Linux server (college network)
 
-Needs Docker with the Compose plugin (`docker compose version`), about 2 GB of RAM and 2 GB of disk.
-No Docker? Use [Linux without Docker](#linux-without-docker-also-inside-a-container) instead.
+Needs Python 3.12, `curl`, about 2 GB of disk and 2 GB of RAM. No root, Docker or systemd is required, so it also
+works inside a container or a shared account.
 
 ```bash
 git clone <this-repo-url> kriyanighantu && cd kriyanighantu
 cp .env.example .env
-nano .env                        # set NEO4J_PASSWORD (8+ characters)
-docker compose up -d --build     # first start: ~1 min to build, then the graph loads itself
-docker compose logs -f app       # wait for "Serving on http://0.0.0.0:5000", then Ctrl+C
+nano .env                               # set NEO4J_PASSWORD (8+ characters); change ports if needed
+sh setup_linux.sh                       # once: Python packages, Java 21 and Neo4j (~400 MB, 10-15 min)
+nohup sh serve.sh > serve.log 2>&1 &    # start; keeps running after you log out
+tail -f serve.log                       # wait for "Listening at: http://0.0.0.0:5006", then Ctrl+C
 ```
 
-Open `http://<server-ip>:5000` from any computer on the network (`hostname -I` shows the IP).
-If it does not load from other machines, open the port: `sudo ufw allow 5000/tcp`.
+Open `http://<server-ip>:5006` from any computer on the network. `hostname -I` shows the server's IP.
 
 | Task | Command |
 |---|---|
-| Stop / start | `docker compose stop` / `docker compose start` |
-| Update after `git pull` | `docker compose up -d --build` |
-| Reload the graph after data changes | `docker compose exec app python pipeline/load_neo4j.py` |
-| Run the tests | `docker compose exec app python -m pytest -q tests` |
-| Remove everything, including the database | `docker compose down -v` |
-| Use another port | set `APP_PORT=8080` in `.env`, then `docker compose up -d` |
+| Stop | `sh stop.sh` (stops this app and its Neo4j only) |
+| Start again, e.g. after a reboot | `nohup sh serve.sh > serve.log 2>&1 &` |
+| Update after `git pull` | `sh stop.sh`, `sh setup_linux.sh`, then start again |
+| See requests and errors | `tail -f serve.log` |
+| Run the tests | `.venv/bin/python -m pytest -q tests` |
 
-Neo4j itself is not exposed to the network. From the server, its browser is at <http://localhost:7474> (user `neo4j`,
-password from `.env`). Both containers restart automatically after a reboot.
+**Ports.** The defaults are the usual ones + 6, to avoid clashes on shared servers:
 
-## Linux without Docker (also inside a container)
+| Setting in `.env` | Default | Used for |
+|---|---|---|
+| `APP_PORT` | 5006 | The website, open to the network |
+| `NEO4J_BOLT_PORT` | 7693 | Database connection, this machine only |
+| `NEO4J_HTTP_PORT` | 7480 | Neo4j Browser at `http://localhost:7480`, this machine only |
 
-Needs only Python 3.12, `curl` and about 2 GB of disk. No root, Docker or systemd is required.
+If a port is taken, `serve.sh` says which one. Change it in `.env`, run `sh setup_linux.sh` again (it skips the
+downloads), then start again. `WORKERS` (default 2) sets the number of app processes.
 
-```bash
-git clone <this-repo-url> kriyanighantu && cd kriyanighantu
-cp .env.example .env
-nano .env               # set NEO4J_PASSWORD (8+ characters)
-sh setup_linux.sh       # once: Python packages in .venv/, Java 21 + Neo4j in .linux/ (~400 MB, 10-15 min)
-sh serve.sh             # every time: starts Neo4j, loads the graph on first run, serves on 0.0.0.0:5000
-```
+**Notes**
 
-Do not run `pip install -r requirements.txt` on the system Python. Debian and Ubuntu block it with
-`error: externally-managed-environment`, so `setup_linux.sh` installs into `.venv/` instead.
-
-- **Keep it running after you log out:** `nohup sh serve.sh > serve.log 2>&1 &`, or run it inside `tmux`.
-- **Stop it:** `Ctrl+C` stops the app. Then `JAVA_HOME=$PWD/.linux/jdk .linux/neo4j/bin/neo4j stop` stops Neo4j.
-- **Inside a container:** the app listens on port 5000 of that container. To reach it from other machines, the container
-  must publish that port (for example `docker run -p 5000:5000 …`); ask whoever manages the server. Open
-  `http://<server-ip>:5000`.
-- **Settings:** `APP_PORT` (default 5000) and `WORKERS` (default 2) are read from `.env` or the environment. If port 5000 is taken, set e.g. `APP_PORT=5007` in `.env`.
-- **Change the password later:** delete `.linux/neo4j/data`, update `.env`, and run `sh setup_linux.sh` again.
+- Do not run `pip install -r requirements.txt` on the system Python. Debian and Ubuntu block it with
+  `error: externally-managed-environment`, so `setup_linux.sh` installs into `.venv/` instead.
+- Inside a container, `hostname -I` must show a college-network address. If it shows only `172.17.x.x`, the
+  container's port must be published to the host by whoever manages it.
+- Everything is installed inside the project folder (`.venv/`, `.linux/`). Deleting the folder removes it all.
 
 ## Windows (this computer)
 
@@ -91,8 +83,8 @@ python -m pytest -q tests
 python pipeline/load_neo4j.py       # replaces everything in the database
 ```
 
-Use `.venv/bin/python` (Linux) or `.venv\Scripts\python` (Windows). With Docker, run `docker compose up -d --build` and
-then the reload command from the table above. Restart the app afterwards so it rereads the graph.
+Use `.venv/bin/python` (Linux, with Neo4j running) or `.venv\Scripts\python` (Windows). Restart the app afterwards
+so it rereads the graph.
 
 ## Project layout
 
@@ -105,7 +97,7 @@ then the reload command from the table above. Restart the app afterwards so it r
 | `webapp/` | Flask app (`app.py`, `finder.py`) and its page |
 | `tests/`, `test_data/` | Unit tests; generated test paragraphs |
 | `docs/` | The report (`report.html` → `report.pdf` via `make_report.py`) |
-| `Dockerfile`, `docker-compose.yml`, `setup_linux.sh`, `serve.sh` | Linux deployment, with or without Docker |
+| `setup_linux.sh`, `serve.sh`, `stop.sh` | Linux server: install, start, stop |
 | `start.bat`, `start.ps1`, `start_neo4j.ps1` | Windows start |
 
 ## Graph model
@@ -123,12 +115,12 @@ label. Two verbs are synonyms in a context when they share a Shade. Details are 
 
 | What you see | What to do |
 |---|---|
-| "The database is not reachable" | Neo4j is not running or the password in `.env` is wrong. Docker: `docker compose logs neo4j`. |
-| `NEO4J_PASSWORD` error from Compose | Create `.env` from `.env.example`. |
-| `error: externally-managed-environment` | You ran pip on the system Python. Use `sh setup_linux.sh`, or create a venv: `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`. |
-| `docker: command not found` | Use [Linux without Docker](#linux-without-docker-also-inside-a-container). |
-| Changed the password after the first start | Docker: `docker compose down -v` and start again. Without Docker: delete `.linux/neo4j/data` and rerun `setup_linux.sh`. Either way the database is deleted and reloads itself. |
-| Page loads on the server but not from other PCs | Open the port in the firewall, and check that both are on the same network. |
+| "The database is not reachable" | Neo4j is not running or the password in `.env` is wrong. Restart with `sh stop.sh`, then `serve.sh`. Neo4j's own log is `.linux/neo4j/logs/neo4j.log`. |
+| "Port … is already in use" | Another program has it. Pick a free port in `.env` and run `sh setup_linux.sh` again. |
+| "Failed to start Neo4j" / `PortBindException` | Same as above, for `NEO4J_BOLT_PORT` or `NEO4J_HTTP_PORT`. |
+| `error: externally-managed-environment` | You ran pip on the system Python. Use `sh setup_linux.sh` instead. |
+| Changed the password after the first start | `sh stop.sh`, delete `.linux/neo4j/data`, run `sh setup_linux.sh`, start again. The graph reloads itself. |
+| Page loads on the server but not from other PCs | The server's firewall blocks the port (admin: `sudo ufw allow 5006/tcp`), or the PC is on another network. |
 | "This PDF has no extractable text" | The PDF is scanned. Run OCR on it, or paste the text. |
 | A Sanskrit word from a PDF is "not in your text" | The PDF's font does not store real Unicode. Paste the text instead. |
 

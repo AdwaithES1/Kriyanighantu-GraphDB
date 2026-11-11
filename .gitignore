@@ -21,3 +21,6 @@ Thumbs.db
 
 # Linux install made by setup_linux.sh (Java, Neo4j and its data)
 .linux/
+
+# PID file written by serve.sh
+.app.pid

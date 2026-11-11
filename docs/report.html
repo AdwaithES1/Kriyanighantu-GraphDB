@@ -82,7 +82,7 @@ neighbouring sentences (0.5), glossed <i>agitate, jerk, jolt</i></td></tr>
 <tr><td>Database</td><td>Neo4j 2025.12 Community, with uniqueness constraints and a full-text index on glosses</td></tr>
 <tr><td>Pipeline and logic</td><td>Python 3.12, pandas, neo4j driver, PyMuPDF</td></tr>
 <tr><td>Web app</td><td>Flask with one HTML page: choose Statement, Text file or PDF, enter the word, get the answer</td></tr>
-<tr><td>Deployment</td><td>Windows: <code>start.bat</code>. Linux / network: Docker Compose (Neo4j + gunicorn)</td></tr>
+<tr><td>Deployment</td><td>Windows: <code>start.bat</code>. Linux server: <code>setup_linux.sh</code> installs Java and Neo4j without root, <code>serve.sh</code> runs Neo4j and the app (gunicorn) for the network</td></tr>
 <tr><td>Tests</td><td>17 unit tests, plus 20 generated paragraph cases in <code>test_data/</code></td></tr>
 </table>
 

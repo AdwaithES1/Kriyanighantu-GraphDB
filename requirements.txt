@@ -5,4 +5,4 @@ pandas==3.1.1
 openpyxl==3.1.5
 pymupdf==2.1
 pytest==9.2.0
-gunicorn==23.0.0 ; sys_platform != "win32"   # production web server (Linux / container)
+gunicorn==23.0.0 ; sys_platform != "win32"   # production web server (Linux)
