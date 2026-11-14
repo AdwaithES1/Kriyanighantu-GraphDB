@@ -28,7 +28,7 @@ h1 { font-size: 1.7rem; margin: 0; line-height: 1.25; }
 form .panel { display: grid; gap: 18px; }
 fieldset { border: 0; padding: 0; margin: 0; }
 legend, label.field { display: block; font-weight: 600; font-size: .9rem; margin-bottom: 6px; padding: 0; }
-.toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; padding: 3px; gap: 3px; }
+.toggle { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 9px; padding: 3px; gap: 3px; }
 .toggle input { position: absolute; opacity: 0; pointer-events: none; }
 .toggle label { padding: 7px 16px; border-radius: 6px; cursor: pointer; font-size: .95rem; }
 .toggle input:checked + label { background: var(--accent); color: var(--accent-ink); }
@@ -64,15 +64,27 @@ summary { cursor: pointer; font-size: .92rem; font-weight: 600; }
 .problem h2 { margin: 0 0 6px; font-size: 1.2rem; }
 .problem p { margin: 0; }
 .summary { color: var(--muted); font-size: .92rem; margin: 0; }
+.hint { color: var(--muted); font-size: .85rem; margin: 6px 0 0; }
+.toggle { flex-wrap: wrap; }
+mark { background: var(--soft); color: inherit; border-radius: 4px; padding: 0 3px; font-weight: 600; }
+.headword { color: var(--muted); font-size: .92rem; margin: 0 0 6px; }
 </style>
 </head>
 <body>
 <main>
   <h1>Kriyānighaṇṭu Synonym Finder</h1>
-  <p class="lead">Give a passage and a word from it. The app reads the context and picks the best Sanskrit synonym.</p>
+  <p class="lead" id="lead"></p>
 
   <form id="form">
     <div class="panel">
+      <fieldset>
+        <legend>What to find</legend>
+        <div class="toggle">
+          <input type="radio" name="task" id="t-in-context" value="in_context" checked><label for="t-in-context">Synonym for a word in the text</label>
+          <input type="radio" name="task" id="t-in-text" value="in_text"><label for="t-in-text">Synonym of a word, in the text</label>
+        </div>
+      </fieldset>
+
       <fieldset>
         <legend>Input type</legend>
         <div class="toggle">
@@ -92,8 +104,9 @@ summary { cursor: pointer; font-size: .92rem; font-weight: 600; }
       </div>
 
       <div>
-        <label class="field" for="word">Word from the input</label>
+        <label class="field" for="word" id="word-label">Word from the input</label>
         <input type="text" id="word" name="word" placeholder="चलति" autocomplete="off">
+        <p class="hint" id="word-hint"></p>
       </div>
       <button class="go" id="go" type="submit">Find synonym</button>
     </div>
@@ -130,16 +143,70 @@ function chips(words, onPick) {
   return row;
 }
 
+const TASKS = {
+  in_context: {
+    lead: 'Give a passage and a word from it. The app reads the context and picks the best Sanskrit synonym.',
+    label: 'Word from the input',
+    hint: 'The word must appear in the text; its sentence decides which meaning is meant.',
+    button: 'Find synonym',
+  },
+  in_text: {
+    lead: 'Give a passage and any word. The app finds the words in the passage that are its synonyms, reading each in its context.',
+    label: 'Word to find synonyms of',
+    hint: 'The word does not need to be in the text: a Sanskrit verb (चलति) or an English meaning (go, tremble).',
+    button: 'Find in text',
+  },
+};
+const task = () => form.elements.task.value;
+
+function retry(word) { wordInput.value = word; form.requestSubmit(); }
+
 function renderProblem(data) {
   const card = el('section', 'panel problem');
   card.append(el('h2', '', data.title), el('p', '', data.message));
   if (data.suggestions && data.suggestions.length) {
+    // A spelling suggestion can be retried; in the in-text finder any database verb can be, since it need not be in the text.
+    const canRetry = data.suggestions_in_text || (task() === 'in_text' && !data.suggestions_label);
+    const label = data.suggestions_label || (data.suggestions_in_text ? 'Similar words in your text' : 'Similar verbs in the database');
     const box = el('div', 'section');
-    box.append(el('p', 'tag', data.suggestions_in_text ? 'Similar words in your text' : 'Similar verbs in the database'));
-    box.append(chips(data.suggestions, data.suggestions_in_text ? word => { wordInput.value = word; form.requestSubmit(); } : null));
+    box.append(el('p', 'tag', label));
+    box.append(chips(data.suggestions, canRetry ? retry : null));
     card.append(box);
   }
   results.append(card);
+}
+
+function sentenceWith(sentence, token) {
+  // The sentence with the matched word highlighted (it is rebuilt from tokens, so the word is present as typed).
+  const line = el('p', 'sentence');
+  const at = sentence.indexOf(token);
+  if (at < 0) { line.textContent = sentence; return line; }
+  line.append(document.createTextNode(sentence.slice(0, at)), el('mark', '', token),
+              document.createTextNode(sentence.slice(at + token.length)));
+  return line;
+}
+
+function renderMatch(item) {
+  const card = el('section', 'panel');
+  card.append(sentenceWith(item.sentence, item.token));
+  card.append(el('p', 'tag', item.kind === 'exact' ? 'Synonym found in your text' : 'Related word found in your text (no exact synonym)'));
+  card.append(el('p', 'best', item.token));
+  if (item.headword !== item.token) card.append(el('p', 'headword', 'Dictionary form: ' + item.headword));
+  const meaning = el('p', 'meaning');
+  meaning.append(el('strong', '', 'Shared meaning: '), document.createTextNode(meaningName(item.meaning)));
+  card.append(meaning);
+  card.append(el('p', 'gloss', item.meaning.gloss || 'The dataset has no English gloss for this meaning.'));
+  card.append(el('p', 'note' + (item.certain ? '' : ' guess'),
+    item.note + (item.because.length ? ' Context words: ' + item.because.join(', ') + '.' : '')));
+  results.append(card);
+}
+
+function renderMatches(data) {
+  const n = data.matches_total, shown = data.matches.length;
+  const extra = n > shown ? ` Showing the best ${shown}.` : '';
+  results.append(el('p', 'summary',
+    `Found ${n} word${n > 1 ? 's' : ''} in your text sharing a meaning with “${data.word}”, best match first.${extra}`));
+  data.matches.forEach(renderMatch);
 }
 
 function renderOccurrence(item) {
@@ -187,6 +254,7 @@ function renderOccurrence(item) {
 function render(data) {
   results.replaceChildren();
   if (data.status !== 'ok') return renderProblem(data);
+  if (data.task === 'in_text') return renderMatches(data);
   const shown = data.occurrences.length;
   const extra = data.occurrences_total > shown ? ` Showing the first ${shown} of ${data.occurrences_total}.` : '';
   if (data.occurrences_total > 1) results.append(el('p', 'summary', `“${data.word}” occurs in ${data.occurrences_total} sentences; each is read separately.${extra}`));
@@ -204,6 +272,17 @@ function syncMode() {
 }
 for (const radio of form.elements.mode) radio.addEventListener('change', syncMode);
 
+function syncTask() {
+  const t = TASKS[task()];
+  document.getElementById('lead').textContent = t.lead;
+  document.getElementById('word-label').textContent = t.label;
+  document.getElementById('word-hint').textContent = t.hint;
+  go.textContent = t.button;
+  results.replaceChildren();
+}
+for (const radio of form.elements.task) radio.addEventListener('change', syncTask);
+syncTask();
+
 form.addEventListener('submit', async event => {
   event.preventDefault();
   go.disabled = true;
@@ -215,7 +294,7 @@ form.addEventListener('submit', async event => {
     render({ status: 'explained', title: 'The app is not responding', message: 'Check that the window running the app is still open, then try again.' });
   } finally {
     go.disabled = false;
-    go.textContent = 'Find synonym';
+    go.textContent = TASKS[task()].button;
   }
 });
 </script>

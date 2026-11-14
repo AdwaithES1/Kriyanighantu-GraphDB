@@ -73,8 +73,14 @@ def index():
     return render_template("index.html")
 
 
+TASKS = {"in_context": finder.find, "in_text": finder.find_in_text}
+
+
 @app.post("/api/find")
 def find():
+    task = TASKS.get(request.form.get("task", "in_context"))
+    if task is None:
+        return jsonify(finder.explained("Unknown finder", "Choose one of the two finders at the top of the page."))
     word = unicodedata.normalize("NFC", request.form.get("word", "").strip())
     if not word:
         return jsonify(finder.explained("No word given", "Enter the word you want a synonym for."))
@@ -83,7 +89,7 @@ def find():
         return jsonify(problem)
     try:
         with driver.session(database=database) as session:
-            return jsonify(finder.find(session, lexicon(session), text, word))
+            return jsonify(task(session, lexicon(session), text, word))
     except (DriverError, Neo4jError):
         return jsonify(finder.explained("The database is not reachable",
                                         "Neo4j does not seem to be running. Close this app and start it with start.bat."))

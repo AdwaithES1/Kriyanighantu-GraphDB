@@ -128,9 +128,32 @@ class Lexicon:
     """The graph, held in memory for scoring; synonyms are still read from Neo4j."""
 
     def __init__(self, session):
-        self.shades = {r["id"]: r.data() for r in session.run(LOAD_SHADES)}
-        self.sense_name = {r["id"]: r["name"] for r in session.run(LOAD_SENSE_NAMES)}
-        self.verbs = [r.data() for r in session.run(LOAD_VERBS)]
+        self._build([r.data() for r in session.run(LOAD_SHADES)],
+                    {r["id"]: r["name"] for r in session.run(LOAD_SENSE_NAMES)},
+                    [r.data() for r in session.run(LOAD_VERBS)])
+
+    @classmethod
+    def from_graph(cls, graph):
+        """Build from output/graph.json instead of Neo4j (used by the tests)."""
+        sense_name = {s["id"]: s["name"] for s in graph["senses"]}
+        senses_of = defaultdict(list)
+        for sense, shade, _ in graph["sense_shade"]:
+            senses_of[shade].append(sense_name[sense])
+        links = defaultdict(list)
+        for e in graph["verb_shade"]:
+            links[e["verb"]].append({k: e[k] for k in ("shade", "sense", "confidence", "qualifier")})
+        lex = cls.__new__(cls)
+        lex._build([{"id": s["id"], "gloss": s["gloss"], "terms": s["terms"], "senses": senses_of[s["id"]]}
+                    for s in graph["shades"]],
+                   sense_name,
+                   [{"id": v["id"], "headword": v["headword"], "forms": v["forms"], "links": links[v["id"]]}
+                    for v in graph["verbs"]])
+        return lex
+
+    def _build(self, shades, sense_name, verbs):
+        self.shades = {s["id"]: s for s in shades}
+        self.sense_name = sense_name
+        self.verbs = verbs
         self.by_form, self.by_stem, self.senses_named = {}, defaultdict(list), defaultdict(set)
         for verb in self.verbs:
             for form in verb["forms"]:
@@ -267,6 +290,66 @@ def analyse(lex, text, word):
         results.append({"sentence": " ".join(sents[index]), "token": token, "chosen": chosen,
                         "decided": decided, "scores": scores, "polysemous": len({l["shade"] for l in links}) > 1})
     return how, links, results
+
+
+RELATED_PENALTY = 0.6  # sharing only the broader sense, not the exact shade, is a weaker synonym
+
+
+def meaning_in_context(lex, sents, index, verb):
+    """Which of the verb's own meanings the text around sentence `index` supports: (scores, chosen, decided)."""
+    links = [dict(link, verb=verb["id"], headword=verb["headword"]) for link in verb["links"]]
+    items = weighted_context(lex, sents, index, {verb["id"]}, set())
+    scores = score_shades(lex, {link["shade"] for link in links}, items)
+    chosen, decided = choose(lex, links, scores)
+    return scores, chosen, decided
+
+
+def synonyms_in_text(lex, text, word, min_confidence=0.5):
+    """Find verbs in `text` that share a meaning with `word`, which need not occur in the text.
+
+    Returns (the word's meanings, matches, headwords of all dataset verbs recognised in the text).
+    Each match says which meaning is shared, whether only the broader sense is shared ("related"),
+    and how the text around it reads that verb ("fit": single / confirmed / undecided / other).
+    """
+    links, query_ids, _, _ = target_links(lex, word)
+    query_shades = {l["shade"]: l for l in links if l["confidence"] >= min_confidence}
+    query_senses = set()
+    for l in query_shades.values():
+        query_senses |= {lex.sense_name[l["sense"]]} if l["sense"] else set(lex.shades[l["shade"]]["senses"])
+
+    sents = sentences(text)
+    matches, seen, done = [], {}, set()
+    for index, tokens in enumerate(sents):
+        for token in tokens:
+            if not DEVANAGARI.search(token):
+                continue
+            for verb in lex.verbs_for(token)[0]:
+                if verb["id"] in query_ids or (index, verb["id"]) in done:
+                    continue
+                done.add((index, verb["id"]))
+                seen.setdefault(verb["headword"], True)
+                usable = [l for l in verb["links"] if l["confidence"] >= min_confidence]
+                exact = [l for l in usable if l["shade"] in query_shades]
+                related = [l for l in usable if l["shade"] not in query_shades and lex.sense_name[l["sense"]] in query_senses]
+                if not exact and not related:
+                    continue
+                scores, chosen, decided = meaning_in_context(lex, sents, index, verb)
+                chosen_shades = {l["shade"] for l in chosen}
+                # Of the shared meanings, prefer the one the context picked, then the strongest.
+                candidates = exact or related
+                link = max(candidates, key=lambda l: (l["shade"] in chosen_shades, scores[l["shade"]][0], l["confidence"]))
+                query_link = query_shades.get(link["shade"]) or max(query_shades.values(), key=lambda l: l["confidence"])
+                polysemous = len({l["shade"] for l in verb["links"]}) > 1
+                fit = ("single" if not polysemous else "undecided" if not decided
+                       else "confirmed" if link["shade"] in chosen_shades else "other")
+                matches.append({
+                    "index": index, "sentence": " ".join(tokens), "token": token, "verb": verb, "link": link,
+                    "kind": "exact" if exact else "related", "fit": fit, "scores": scores,
+                    "context_choice": [l for l in chosen if l["shade"] != link["shade"]] if fit == "other" else [],
+                    "strength": round(query_link["confidence"] * link["confidence"]
+                                      * (1.0 if exact else RELATED_PENALTY), 3),
+                })
+    return links, matches, list(seen)
 
 
 def print_result(session, lex, result, args, english_query):

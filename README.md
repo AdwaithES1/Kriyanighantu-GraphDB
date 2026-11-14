@@ -2,6 +2,7 @@
 
 Give the app a passage (typed text, a .txt file or a PDF) and a word from it. It reads the context and returns the
 best-suited Sanskrit synonym from a Neo4j graph built from the Kriyānighaṇṭu dataset, or explains why there is none.
+It can also work the other way round: give any word, and it finds that word's synonyms inside the passage.
 
 How it works, in two pages: [docs/report.pdf](docs/report.pdf).
 
@@ -66,11 +67,22 @@ To set it up on another Windows computer you need Python 3.12 and Java 21:
 
 ## Using the app
 
-1. Choose **Statement**, **Text file** (.txt, UTF-8) or **PDF** (with a text layer, not scanned).
-2. Paste the text or choose the file, and type a word that appears in it.
-3. Click **Find synonym**. You get the meaning chosen from the context, the best synonym and alternatives. If no
-   synonym can be given, the app says why (word not in the text, verb not in the dataset, a noun, no meaning recorded,
-   or no other verb with that meaning) and suggests close spellings.
+The toggle at the top switches between two finders:
+
+| Finder | You give | You get |
+|---|---|---|
+| **Synonym for a word in the text** | A passage and a word that appears in it | The meaning the context selects, the best synonym from the database, and alternatives |
+| **Synonym of a word, in the text** | A passage and any word (a Sanskrit verb, or an English meaning such as *tremble*) | The words in the passage that are its synonyms, best first, each with the meaning it shares and whether its own context confirms that meaning |
+
+1. Choose the finder, then **Statement**, **Text file** (.txt, UTF-8) or **PDF** (with a text layer, not scanned).
+2. Paste the text or choose the file, and type the word.
+3. Click the button. If no answer can be given, the app says why (word not in the text, verb not in the dataset, a noun,
+   no meaning recorded, no verb sharing its meaning) and suggests close spellings or the word's synonyms elsewhere in
+   the database.
+
+Example for the second finder: text `मुनिः नगरे क्ष्मायते । नरः कम्पे केपते । राजा अपि एजति ।`, word `गेपते` (not in the
+text). It finds केपते, क्ष्मायते and एजति, which share गेपते's meaning कम्प (trembling). केपते is ranked first, because it
+has several meanings and its context confirms this one.
 
 Ready-made inputs are in `test_data/`: 20 paragraphs (`cases/T01.txt`…, five as `pdf/`), listed with the expected
 meaning in `cases.json`. `python test_data/run_cases.py` scores them all and writes `test_data/results.md`.
