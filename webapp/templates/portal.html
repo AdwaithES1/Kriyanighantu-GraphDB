@@ -215,12 +215,9 @@ for (const radio of document.querySelectorAll('input[name=kind]')) {
 }
 filter.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(load, 250); });
 $('add').onclick = () => openEditor(null);
-function toggle(button, panel) {
-  Keyboard.mount(panel);
-  button.onclick = () => { panel.hidden = !panel.hidden; button.setAttribute('aria-expanded', String(!panel.hidden)); };
-}
-toggle($('kb-toggle'), $('kb'));
-toggle($('editor-kb-toggle'), $('editor-kb'));
+Keyboard.attach($('kb-toggle'), $('kb'), filter);
+const editorKeyboard = Keyboard.attach($('editor-kb-toggle'), $('editor-kb'), () => $('editor-fields').querySelector('input, textarea'));
+editor.addEventListener('close', () => editorKeyboard.hide());
 load();
 watchStatus();
 </script>

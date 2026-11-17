@@ -1,5 +1,8 @@
-// On-screen Devanagari keyboard. It types into the text field that was focused last.
-// Usage: Keyboard.mount(containerElement)  -> the container gets the keys; show or hide it yourself.
+// On-screen Devanagari keyboard. It types into the text field that was focused last (if it is still visible),
+// otherwise into a fallback field.
+// Usage: const kb = Keyboard.attach(toggleButton, panel, fallback)
+//          the button shows and hides the keys in `panel`; `fallback` is a field, or a function returning one.
+//          kb.hide() closes it, e.g. after the form is submitted so the results are in view.
 const Keyboard = (() => {
   const GROUPS = [
     ['स्वर', [['अ', 'आ', 'इ', 'ई', 'उ', 'ऊ', 'ऋ', 'ॠ', 'ऌ', 'ॡ'], ['ए', 'ऐ', 'ओ', 'औ', 'अं', 'अः', 'अँ', 'ॐ']]],
@@ -14,17 +17,25 @@ const Keyboard = (() => {
     if ((el.tagName === 'INPUT' && el.type === 'text') || el.tagName === 'TEXTAREA') target = el;
   });
 
-  function edit(change) {
-    if (!target || !target.isConnected) return;
-    const start = target.selectionStart ?? target.value.length, end = target.selectionEnd ?? start;
-    const [value, caret] = change(target.value, start, end);
-    target.value = value;
-    target.focus();
-    target.setSelectionRange(caret, caret);
-    target.dispatchEvent(new Event('input', { bubbles: true }));
+  let fallbackOf = new Map();  // panel -> fallback, for the panel whose key was pressed
+  const visible = el => el && el.isConnected && el.getClientRects().length > 0;
+  const resolve = fallback => (typeof fallback === 'function' ? fallback() : fallback);
+  function field(panel) {
+    return visible(target) ? target : resolve(fallbackOf.get(panel)) || null;
   }
-  const insert = text => edit((v, s, e) => [v.slice(0, s) + text + v.slice(e), s + text.length]);
-  const backspace = () => edit((v, s, e) => s === e ? [v.slice(0, Math.max(0, s - 1)) + v.slice(e), Math.max(0, s - 1)] : [v.slice(0, s) + v.slice(e), s]);
+
+  function edit(panel, change) {
+    const input = field(panel);
+    if (!input) return;
+    const start = input.selectionStart ?? input.value.length, end = input.selectionEnd ?? start;
+    const [value, caret] = change(input.value, start, end);
+    input.value = value;
+    input.focus();
+    input.setSelectionRange(caret, caret);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  const insert = (panel, text) => edit(panel, (v, s, e) => [v.slice(0, s) + text + v.slice(e), s + text.length]);
+  const backspace = panel => edit(panel, (v, s, e) => s === e ? [v.slice(0, Math.max(0, s - 1)) + v.slice(e), Math.max(0, s - 1)] : [v.slice(0, s) + v.slice(e), s]);
 
   function button(label, onClick, wide) {
     const key = document.createElement('button');
@@ -45,14 +56,29 @@ const Keyboard = (() => {
       for (const row of rows) {
         const line = document.createElement('div');
         line.className = 'keys';
-        for (const char of row) line.append(button(char, () => insert(char)));
+        for (const char of row) line.append(button(char, () => insert(container, char)));
         container.append(line);
       }
     }
     const actions = document.createElement('div');
     actions.className = 'keys';
-    actions.append(button('Space', () => insert(' '), true), button('⌫ Delete', backspace, true));
+    actions.append(button('Space', () => insert(container, ' '), true), button('⌫ Delete', () => backspace(container), true));
     container.append(actions);
   }
-  return { mount };
+
+  function attach(toggle, panel, fallback) {
+    mount(panel);
+    fallbackOf.set(panel, fallback);
+    const set = show => {
+      panel.hidden = !show;
+      toggle.setAttribute('aria-expanded', String(show));
+    };
+    toggle.addEventListener('click', () => {
+      set(panel.hidden);
+      if (!panel.hidden) { const input = field(panel); if (input) input.focus(); }
+    });
+    set(false);
+    return { hide: () => set(false) };
+  }
+  return { mount, attach };
 })();

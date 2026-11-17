@@ -50,13 +50,18 @@
           <input type="text" id="word" name="word" placeholder="चलति" autocomplete="off">
           <p class="hint" id="word-hint"></p>
         </div>
-        <button class="go" id="go" type="submit">Find synonym</button>
+        <div class="row">
+          <button class="go" id="go" type="submit">Find synonym</button>
+          <button class="btn" type="button" id="kb-toggle" aria-expanded="false">अ Keyboard</button>
+        </div>
+        <div id="kb" hidden><p class="hint" style="margin: 0 0 10px">Types into the field you clicked last: the statement or the word.</p></div>
       </div>
     </form>
 
     <div id="results" aria-live="polite"></div>
 {% endblock %}
 {% block scripts %}
+<script src="{{ url_for('static', filename='keyboard.js') }}"></script>
 <script>
 const form = document.getElementById('form');
 const results = document.getElementById('results');
@@ -225,8 +230,13 @@ function syncTask() {
 for (const radio of form.elements.task) radio.addEventListener('change', syncTask);
 syncTask();
 
+// Types into the statement or the word, whichever was clicked last; the word when the statement box is hidden.
+const keyboard = Keyboard.attach(document.getElementById('kb-toggle'), document.getElementById('kb'),
+  () => (form.elements.mode.value === 'statement' ? document.getElementById('text') : wordInput));
+
 form.addEventListener('submit', async event => {
   event.preventDefault();
+  keyboard.hide();  // so the results come into view; the Keyboard button brings it back
   go.disabled = true;
   go.textContent = 'Reading…';
   try {

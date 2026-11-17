@@ -204,14 +204,9 @@ async function openDetail(type, key) {
 
 dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
 for (const card of $('types').children) card.onclick = () => { setType(card.dataset.by); queryInput.focus(); };
-$('search').addEventListener('submit', event => { event.preventDefault(); runSearch(); });
-Keyboard.mount($('kb'));
-$('kb-toggle').onclick = () => {
-  const show = $('kb').hidden;
-  $('kb').hidden = !show;
-  $('kb-toggle').setAttribute('aria-expanded', String(show));
-  queryInput.focus();
-};
+const keyboard = Keyboard.attach($('kb-toggle'), $('kb'), queryInput);
+// Close the keyboard on search so the results come into view; the Keyboard button brings it back.
+$('search').addEventListener('submit', event => { event.preventDefault(); keyboard.hide(); runSearch(); });
 
 const params = new URLSearchParams(location.search);
 setType(params.get('by') || 'verb');
