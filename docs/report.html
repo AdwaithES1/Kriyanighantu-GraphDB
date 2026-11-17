@@ -82,9 +82,9 @@ neighbouring sentences (0.5), glossed <i>agitate, jerk, jolt</i></td></tr>
 <tr><th>Part</th><th>Technology</th></tr>
 <tr><td>Database</td><td>Neo4j 2025.12 Community, with uniqueness constraints and a full-text index on glosses</td></tr>
 <tr><td>Pipeline and logic</td><td>Python 3.12, pandas, neo4j driver, PyMuPDF</td></tr>
-<tr><td>Web app</td><td>Flask with one HTML page: two finders (synonym of a word in the text, or a word's synonyms in the text), and input as Statement, Text file or PDF</td></tr>
+<tr><td>Web app</td><td>One Flask site on one port: synonym finder (by root, verb or meaning), context-aware finder, and a data-entry portal with login. Portal edits and Excel imports are stored in Neo4j and the graph is rebuilt from them</td></tr>
 <tr><td>Deployment</td><td>Windows: <code>start.bat</code>. Linux server: <code>setup_linux.sh</code> installs Java and Neo4j without root, <code>serve.sh</code> runs Neo4j and the app (gunicorn) for the network</td></tr>
-<tr><td>Tests</td><td>23 unit tests, plus 20 generated paragraph cases in <code>test_data/</code></td></tr>
+<tr><td>Tests</td><td>30 unit tests, plus 20 generated paragraph cases in <code>test_data/</code></td></tr>
 </table>
 
 <h2>8. Evaluation</h2>

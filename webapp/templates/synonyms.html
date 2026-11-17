@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block title %}Synonym Finder{% endblock %}
+{% block content %}
+    <p class="eyebrow">Kriyanighantu</p>
+    <h1>Synonym Finder</h1>
+    <p class="lead">Search the thesaurus by root, verb or English meaning. Open a result to see its details and every synonym, grouped by meaning.</p>
+
+    <div class="cards" id="types">
+      <button type="button" class="card" data-by="root">
+        <span class="tile" aria-hidden="true">अ</span>
+        <span class="finder-title">Search by Root</span>
+        <span class="finder-text">Explore Sanskrit roots and their associated verbs.</span>
+      </button>
+      <button type="button" class="card" data-by="verb">
+        <span class="tile" aria-hidden="true">अ</span>
+        <span class="finder-title">Search by Verb</span>
+        <span class="finder-text">Find a Sanskrit verb and discover its semantic synonyms.</span>
+      </button>
+      <button type="button" class="card" data-by="meaning">
+        <span class="tile" aria-hidden="true">अ</span>
+        <span class="finder-title">Search by Meaning</span>
+        <span class="finder-text">Search Sanskrit verbs using English meanings.</span>
+      </button>
+    </div>
+
+    <form id="search" class="panel" role="search">
+      <label class="field" for="query" id="query-label">Verb</label>
+      <div class="row">
+        <input class="grow" type="text" id="query" autocomplete="off">
+        <button class="btn primary" type="submit">Search</button>
+        <button class="btn" type="button" id="kb-toggle" aria-expanded="false">अ Keyboard</button>
+      </div>
+      <div id="kb" hidden></div>
+    </form>
+
+    <p class="summary" id="summary" style="margin-top: 20px" aria-live="polite"></p>
+    <div class="results-grid" id="results"></div>
+
+    <dialog id="detail" aria-labelledby="detail-title">
+      <div class="dialog-body" id="detail-body"></div>
+    </dialog>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='keyboard.js') }}"></script>
+<script>
+const TYPES = {
+  root: { label: 'Root', placeholder: 'अक', meta: [['rootIndex', 'Index'], ['ganam', 'Ganam']], key: 'root' },
+  verb: { label: 'Verb', placeholder: 'चलति', meta: [['lookup', 'Lookup'], ['root', 'Root'], ['ganam', 'Ganam']], key: 'verb' },
+  meaning: { label: 'Meaning (English or Sanskrit)', placeholder: 'tremble', meta: [['englishMeaning', 'Meaning'], ['reference', 'Reference']], key: 'lookup' },
+};
+const LABELS = { verb: 'Verb', lookup: 'Lookup', englishMeaning: 'English meaning', reference: 'Reference', root: 'Root',
+  rootIndex: 'Root index', ganam: 'Ganam', transVerb: 'Properties', ItAgma: 'It Agma', derivation: 'Derivation',
+  example: 'Example', reverseWord: 'Reverse word', seeAlso: 'See also' };
+const WIDE = new Set(['englishMeaning', 'reference', 'derivation', 'example', 'seeAlso', 'reverseWord', 'root', 'transVerb']);
+
+const $ = id => document.getElementById(id);
+const queryInput = $('query'), results = $('results'), summary = $('summary'), dialog = $('detail'), body = $('detail-body');
+let by = 'verb';
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined && text !== null) node.textContent = text;
+  return node;
+}
+
+function setType(next, keepQuery) {
+  by = TYPES[next] ? next : 'verb';
+  for (const card of $('types').children) card.setAttribute('aria-pressed', String(card.dataset.by === by));
+  $('query-label').textContent = TYPES[by].label;
+  queryInput.placeholder = TYPES[by].placeholder;
+  if (!keepQuery) { queryInput.value = ''; results.replaceChildren(); summary.textContent = ''; }
+}
+
+async function getJson(url) {
+  const response = await fetch(url);
+  const data = await response.json().catch(() => ({ error: 'The server sent an unreadable answer.' }));
+  if (!response.ok) throw new Error(data.error || 'The request failed.');
+  return data;
+}
+
+async function runSearch() {
+  const query = queryInput.value.trim();
+  history.replaceState(null, '', `?by=${by}` + (query ? `&query=${encodeURIComponent(query)}` : ''));
+  results.replaceChildren();
+  if (!query) { summary.textContent = 'Type something to search for.'; return; }
+  summary.textContent = 'Searching…';
+  try {
+    const data = await getJson(`/api/thesaurus/search?by=${by}&query=${encodeURIComponent(query)}`);
+    const type = TYPES[by], shownBy = by;
+    summary.textContent = data.results.length
+      ? `${data.results.length} result${data.results.length > 1 ? 's' : ''}${data.results.length === 30 ? ' (the first 30)' : ''}. Select one for details.`
+      : `Nothing in the dataset matches “${query}”. Check the spelling, or try a shorter part of the word.`;
+    for (const item of data.results) {
+      const card = el('button', 'result');
+      card.type = 'button';
+      card.append(el('strong', '', item[type.key]));
+      for (const [field, label] of type.meta) if (item[field]) card.append(el('span', '', `${label}: ${item[field]}`));
+      card.onclick = () => openDetail(shownBy, item[type.key]);
+      results.append(card);
+    }
+  } catch (error) {
+    summary.textContent = error.message;
+  }
+}
+
+function fieldList(entry, skip) {
+  const list = el('dl', 'fields');
+  for (const [field, label] of Object.entries(LABELS)) {
+    if (skip.includes(field) || !entry[field]) continue;
+    const box = el('div', WIDE.has(field) ? 'full' : '');
+    box.append(el('dt', '', label));
+    const value = el('dd');
+    if (field === 'root') {
+      const link = el('button', 'linklike', entry[field]);
+      link.type = 'button';
+      link.onclick = () => openDetail('root', entry[field]);
+      value.append(link);
+    } else value.textContent = entry[field];
+    box.append(value);
+    list.append(box);
+  }
+  return list;
+}
+
+function chipRow(words, type) {
+  const row = el('div', 'chips');
+  for (const word of words) {
+    const chip = el('button', 'chip', word);
+    chip.type = 'button';
+    chip.onclick = () => openDetail(type, word);
+    row.append(chip);
+  }
+  return row;
+}
+
+function section(title, node) {
+  const box = el('div', 'section');
+  box.append(el('p', 'tag', title), node);
+  return box;
+}
+
+function renderDetail(data) {
+  const head = el('div', 'dialog-head');
+  const titles = el('div');
+  titles.append(el('p', 'tag', { verb: 'Verb detail', root: 'Root detail', meaning: 'Meaning detail' }[data.type]));
+  const title = el('h2', '', data.title);
+  title.id = 'detail-title';
+  titles.append(title);
+  const close = el('button', 'btn small', 'Close');
+  close.type = 'button';
+  close.onclick = () => dialog.close();
+  head.append(titles, close);
+  body.replaceChildren(head);
+
+  if (data.type === 'verb') {
+    const box = el('div', 'section');
+    box.append(el('p', 'tag', 'Synonyms, by meaning'));
+    if (!data.meanings.length) box.append(el('p', 'gloss', 'No usable meaning is recorded for this verb, so no synonyms can be listed.'));
+    for (const m of data.meanings) {
+      const block = el('div', 'meaning-block');
+      block.append(el('strong', '', m.qualifier ? `${m.meaning} (${m.qualifier})` : m.meaning));
+      if (m.gloss) block.append(el('div', 'gloss', m.gloss));
+      block.append(m.synonyms.length ? chipRow(m.synonyms, 'verb') : el('div', 'gloss', 'No other verb shares this meaning.'));
+      box.append(block);
+    }
+    body.append(box);
+  }
+  const skip = { verb: ['verb'], root: [], meaning: ['lookup'] }[data.type];
+  const details = el('div', 'section');
+  if (data.type === 'verb') details.append(el('p', 'tag', 'Dataset details'));
+  data.entries.forEach((entry, n) => {
+    const block = el('div', n ? 'entry-block' : '');
+    if (data.entries.length > 1) block.append(el('p', 'gloss', `Entry ${n + 1} of ${data.entries.length}` + (entry.lookup && data.type === 'verb' ? `: ${entry.lookup}` : '')));
+    block.append(fieldList(entry, data.type === 'root' ? ['root'] : skip));
+    details.append(block);
+  });
+  body.append(details);
+
+  if (data.type === 'root') {
+    const verbs = [...new Set(data.verbs.map(v => v.verb))];
+    body.append(section(`Verbs from this root (${verbs.length})`, verbs.length ? chipRow(verbs, 'verb') : el('p', 'gloss', 'No verb in the dataset is listed under this root.')));
+  }
+  if (data.type === 'meaning') {
+    body.append(section(`Verbs listed under this meaning (${data.verbs.length})`, data.verbs.length ? chipRow(data.verbs, 'verb') : el('p', 'gloss', 'No verb is listed directly under this meaning.')));
+    if (data.sharing.length) body.append(section('Other verbs that share it', chipRow(data.sharing, 'verb')));
+    if (data.related.length) body.append(section('Related meanings', chipRow(data.related.map(r => r.lookup), 'meaning')));
+  }
+}
+
+async function openDetail(type, key) {
+  body.replaceChildren(el('p', 'summary', 'Loading…'));
+  if (!dialog.open) dialog.showModal();
+  try {
+    renderDetail(await getJson(`/api/thesaurus/detail?by=${type}&key=${encodeURIComponent(key)}`));
+  } catch (error) {
+    const close = el('button', 'btn small', 'Close');
+    close.type = 'button';
+    close.onclick = () => dialog.close();
+    body.replaceChildren(el('p', 'summary', `“${key}”: ${error.message}`), el('div', 'section'), close);
+  }
+  dialog.scrollTop = 0;
+}
+
+dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
+for (const card of $('types').children) card.onclick = () => { setType(card.dataset.by); queryInput.focus(); };
+$('search').addEventListener('submit', event => { event.preventDefault(); runSearch(); });
+Keyboard.mount($('kb'));
+$('kb-toggle').onclick = () => {
+  const show = $('kb').hidden;
+  $('kb').hidden = !show;
+  $('kb-toggle').setAttribute('aria-expanded', String(show));
+  queryInput.focus();
+};
+
+const params = new URLSearchParams(location.search);
+setType(params.get('by') || 'verb');
+if (params.get('query')) { queryInput.value = params.get('query'); runSearch(); }
+if (params.get('open')) openDetail(by, params.get('open'));  // a link can open one entry directly
+</script>
+{% endblock %}

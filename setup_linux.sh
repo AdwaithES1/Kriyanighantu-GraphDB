@@ -1,5 +1,5 @@
 #!/bin/sh
-# Setup on Linux without root or Docker (works inside a container too).
+# Setup on Linux without root access (works in a shared account or inside a container).
 # Puts the Python packages in .venv and Java 21 + Neo4j in .linux/, sets the Neo4j password and ports from .env.
 # Safe to run again: downloads are skipped, and ports are re-applied (e.g. after changing them in .env).
 # Then start everything with:  sh serve.sh

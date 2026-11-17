@@ -1,7 +1,8 @@
 #!/bin/sh
-# Linux start: start Neo4j (if installed by setup_linux.sh), load the graph into an empty database,
-# and serve the app on the network. Settings come from the environment or .env:
-#   APP_PORT (default 5006), WORKERS (2), APP_HOST (0.0.0.0), NEO4J_BOLT_PORT (7693), NEO4J_* connection settings.
+# Linux start: start Neo4j (if installed by setup_linux.sh), import the Excel dataset if the database is empty,
+# and serve the whole site (home, synonym finder, context finder, data-entry portal) on one port.
+# Settings come from the environment or .env:
+#   APP_PORT (default 5010), APP_HOST (0.0.0.0), NEO4J_BOLT_PORT (7693), NEO4J_* connection settings.
 set -e
 cd "$(dirname "$0")"
 
@@ -30,8 +31,7 @@ neo4j_running() {
     [ -n "$state" ] && [ "$state" != Z ]
 }
 
-APP_PORT=$(env_value APP_PORT 5006)
-WORKERS=$(env_value WORKERS 2)
+APP_PORT=$(env_value APP_PORT 5010)
 if port_busy "$APP_PORT"; then
     echo "Port $APP_PORT is already in use by another program. Choose a free port with APP_PORT=... in .env"
     exit 1
@@ -58,9 +58,9 @@ if [ -d .linux/neo4j ]; then
     fi
 fi
 
-[ -f output/graph.json ] || "$PY" pipeline/build_graph.py
-"$PY" pipeline/load_neo4j.py --if-empty --wait 180
+"$PY" pipeline/import_excel.py --if-empty --wait 180
 
 echo "Serving on http://${APP_HOST:-0.0.0.0}:$APP_PORT"
 exec "$PY" -m gunicorn --chdir webapp --bind "${APP_HOST:-0.0.0.0}:$APP_PORT" \
-     --workers "$WORKERS" --timeout 120 --access-logfile - --pid "$PWD/.app.pid" app:app
+     --workers 1 --threads 8 --timeout 120 --access-logfile - --pid "$PWD/.app.pid" app:app
+# One worker on purpose: it rebuilds the synonym graph after portal edits, and logins live in its memory.

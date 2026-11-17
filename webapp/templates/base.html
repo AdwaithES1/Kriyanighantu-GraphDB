@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Kriyanighantu{% endblock %} · Kriyanighantu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="{{ url_for('home') }}">Kriyanighantu</a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="{{ url_for('home') }}" {% if page == 'home' %}aria-current="page"{% endif %}>Home</a>
+      <a href="{{ url_for('synonyms_page') }}" {% if page == 'synonyms' %}aria-current="page"{% endif %}>Synonym Finder</a>
+      <a href="{{ url_for('context_page') }}" {% if page == 'context' %}aria-current="page"{% endif %}>Context Finder</a>
+    </nav>
+    <div class="nav-right">
+      <a href="{{ url_for('portal_page') }}" {% if page == 'portal' %}aria-current="page"{% endif %}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Data entry
+      </a>
+      {% if session.get('admin') %}
+      <form method="post" action="{{ url_for('logout') }}"><button class="linklike" type="submit">Log out</button></form>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+{% block content %}{% endblock %}
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>A collaborative project between IIIT Kottayam and CIFSS, supported by Central Sanskrit University</p>
+  </div>
+</footer>
+{% block scripts %}{% endblock %}
+</body>
+</html>

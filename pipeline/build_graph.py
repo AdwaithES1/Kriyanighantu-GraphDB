@@ -150,11 +150,29 @@ def align(lookup, known):
 
 
 def load():
+    """The three spreadsheets in dataset/data, as (lookups, verbs, roots) frames."""
     lookups = pd.read_excel(DATA / "Look-up entry.xlsx", sheet_name="Sheet1", dtype=str)
     verbs = pd.read_excel(DATA / "Verb-Entries.xlsx", dtype=str)
     roots = pd.read_excel(DATA / "Root-Entry.xlsx", dtype=str)
     lookups.columns = ["label", "english", "reference"]
     return lookups.dropna(subset=["label", "english"]), verbs.dropna(subset=["Verb"]), roots
+
+
+# Entry field (as stored in Neo4j and used by the data-entry portal) -> spreadsheet column.
+LOOKUP_COLUMNS = {"lookup": "label", "englishMeaning": "english", "reference": "reference"}
+VERB_COLUMNS = {"verb": "Verb", "lookup": "Look Up", "root": "Root", "ganam": "Ganam", "rootIndex": "Root Index",
+                "transVerb": "Properties", "ItAgma": "It-Agma", "derivation": "Derivation", "example": "Example",
+                "reverseWord": "Reverse Word", "seeAlso": "See Also"}
+ROOT_COLUMNS = {"root": "Root", "ganam": "Ganam", "rootIndex": "Ganam Index"}
+
+
+def frames_from_entries(lookups, verbs, roots):
+    """The same frames as load(), built from entry records (lists of dicts) instead of the spreadsheets."""
+    def frame(rows, columns):
+        data = [{col: row.get(field) for field, col in columns.items()} for row in rows]
+        return pd.DataFrame(data, columns=list(columns.values()), dtype=object)
+    lk, vb, rt = frame(lookups, LOOKUP_COLUMNS), frame(verbs, VERB_COLUMNS), frame(roots, ROOT_COLUMNS)
+    return lk.dropna(subset=["label", "english"]), vb.dropna(subset=["Verb"]), rt
 
 
 def split_forms(raw):
@@ -205,8 +223,9 @@ class Union:
         self.parent[self.find(a)] = self.find(b)
 
 
-def build():
-    lk_df, vb_df, rt_df = load()
+def build(frames=None, write=True):
+    """Build the graph from frames (default: the spreadsheets). write=False skips output/*.json."""
+    lk_df, vb_df, rt_df = frames or load()
     report = Counter()
 
     # --- Lookups: align composite glosses over several passes, so a gloss
@@ -453,6 +472,8 @@ def build():
         see_also_verb_refs_unresolved=len(cross_refs) - len(see_also),
     )
     report.update(Counter(f"edge_source:{s}" for e in graph["verb_shade"] for s in e["sources"]))
+    if not write:
+        return graph, report
     OUT.mkdir(exist_ok=True)
     (OUT / "graph.json").write_text(json.dumps(graph, ensure_ascii=False), encoding="utf-8")
     (OUT / "report.json").write_text(json.dumps(dict(sorted(report.items())), ensure_ascii=False, indent=2), encoding="utf-8")

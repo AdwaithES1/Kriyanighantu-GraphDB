@@ -24,4 +24,5 @@ if (Test-Port 7688) {
 }
 
 $ErrorActionPreference = "Continue"  # Flask writes normal notices to stderr
+& $python (Join-Path $project "pipeline\import_excel.py") --if-empty --wait 60
 & $python (Join-Path $project "webapp\app.py") --open

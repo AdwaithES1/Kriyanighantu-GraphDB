@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block title %}Data Entry Portal{% endblock %}
+{% block content %}
+    <p class="eyebrow">Kriyanighantu</p>
+    <h1>Data Entry Portal</h1>
+    <p class="lead">Add, edit and delete the dataset's verbs, roots and meanings. Changes are saved at once, and the synonym finders pick them up a few seconds later.</p>
+
+    <div class="panel">
+      <div class="row" style="justify-content: space-between">
+        <div class="toggle" role="tablist" aria-label="Entry type">
+          <input type="radio" name="kind" id="k-verb" value="verb" checked><label for="k-verb">Verbs</label>
+          <input type="radio" name="kind" id="k-lookup" value="lookup"><label for="k-lookup">Meanings (Look Up)</label>
+          <input type="radio" name="kind" id="k-root" value="root"><label for="k-root">Roots</label>
+        </div>
+        <span class="status" id="status" role="status">Synonym graph is up to date</span>
+      </div>
+
+      <div class="row" style="margin-top: 18px">
+        <input class="grow" type="text" id="filter" placeholder="Search these entries" autocomplete="off" aria-label="Search these entries">
+        <button class="btn" type="button" id="kb-toggle" aria-expanded="false">अ Keyboard</button>
+        <button class="btn primary" type="button" id="add">Add entry</button>
+      </div>
+      <div id="kb" hidden></div>
+
+      <p class="summary" id="count" style="margin-top: 14px" aria-live="polite"></p>
+      <div class="table-wrap"><table id="table"><thead></thead><tbody></tbody></table></div>
+    </div>
+
+    <dialog id="editor" aria-labelledby="editor-title">
+      <form class="dialog-body" id="editor-form" novalidate>
+        <div class="dialog-head">
+          <h2 id="editor-title" style="font-size: 1.35rem"></h2>
+          <button class="btn small" type="button" id="editor-kb-toggle" aria-expanded="false">अ Keyboard</button>
+        </div>
+        <div class="form-grid" id="editor-fields"></div>
+        <div id="editor-kb" hidden></div>
+        <p class="error-text" id="editor-error" role="alert" style="margin-top: 12px"></p>
+        <div class="row" style="margin-top: 16px; justify-content: flex-end">
+          <button class="btn" type="button" id="editor-cancel">Cancel</button>
+          <button class="btn primary" type="submit" id="editor-save">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="confirm" aria-labelledby="confirm-title">
+      <div class="dialog-body">
+        <h2 id="confirm-title" style="font-size: 1.2rem; color: var(--accent); margin: 0 0 8px">Delete this entry?</h2>
+        <p id="confirm-text" style="margin: 0"></p>
+        <p class="error-text" id="confirm-error" role="alert" style="margin-top: 10px"></p>
+        <div class="row" style="margin-top: 16px; justify-content: flex-end">
+          <button class="btn" type="button" id="confirm-cancel">Cancel</button>
+          <button class="btn danger" type="button" id="confirm-ok">Delete entry</button>
+        </div>
+      </div>
+    </dialog>
+
+    <datalist id="ganam-options">
+      {% for g in ["भ्वादि", "अदादि", "जुहोत्यादि", "दिवादि", "स्वादि", "तुदादि", "रुधादि", "तनादि", "क्र्यादि", "चुरादि"] %}<option value="{{ g }}">{% endfor %}
+    </datalist>
+    <datalist id="itagma-options"><option value="सेट्"><option value="अनिट्"><option value="वेट्"></datalist>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='keyboard.js') }}"></script>
+<script>
+// [field, label, options]: options.long = textarea, options.list = suggestions, options.required
+const KINDS = {
+  verb: {
+    name: 'verb', columns: ['verb', 'lookup', 'root', 'ganam', 'rootIndex'],
+    fields: [['verb', 'Verb', { required: true }], ['lookup', 'Look Up', { required: true }], ['root', 'Root', {}],
+      ['ganam', 'Ganam', { list: 'ganam-options' }], ['rootIndex', 'Root index', {}], ['transVerb', 'Properties', {}],
+      ['ItAgma', 'It-Agma', { list: 'itagma-options' }], ['reverseWord', 'Reverse word', {}],
+      ['derivation', 'Derivation', { long: true }], ['example', 'Example', { long: true }], ['seeAlso', 'See also', { long: true }]],
+  },
+  lookup: {
+    name: 'meaning', columns: ['lookup', 'englishMeaning', 'reference'],
+    fields: [['lookup', 'Look Up', { required: true }], ['englishMeaning', 'English meaning', { required: true, long: true }],
+      ['reference', 'Reference (Bhattamalla)', { long: true }]],
+  },
+  root: {
+    name: 'root', columns: ['root', 'ganam', 'rootIndex'],
+    fields: [['root', 'Root', { required: true }], ['ganam', 'Ganam', { required: true, list: 'ganam-options' }],
+      ['rootIndex', 'Ganam index', { required: true }]],
+  },
+};
+const $ = id => document.getElementById(id);
+const table = $('table'), filter = $('filter'), editor = $('editor'), confirmBox = $('confirm');
+let kind = 'verb', editing = null, deleting = null, timer = null, statusTimer = null;
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined && text !== null) node.textContent = text;
+  return node;
+}
+const label = field => KINDS[kind].fields.find(f => f[0] === field)[1];
+
+async function api(method, url, data) {
+  const response = await fetch(url, { method, headers: data ? { 'Content-Type': 'application/json' } : {}, body: data ? JSON.stringify(data) : undefined });
+  if (response.status === 401) { location.href = '/login?next=/data-entry'; throw new Error('Please log in again.'); }
+  const result = await response.json().catch(() => ({ error: 'The server sent an unreadable answer.' }));
+  if (!response.ok) throw new Error(result.error || 'The request failed.');
+  return result;
+}
+
+async function load() {
+  const spec = KINDS[kind], body = table.tBodies[0];
+  const head = el('tr');
+  for (const field of spec.columns) head.append(el('th', '', label(field)));
+  head.append(el('th', '', 'Actions'));
+  table.tHead.replaceChildren(head);
+  try {
+    const data = await api('GET', `/api/entries/${kind}?q=${encodeURIComponent(filter.value.trim())}`);
+    body.replaceChildren();
+    $('count').textContent = data.total === 0
+      ? (filter.value.trim() ? 'No entry matches that search.' : 'No entries yet. Use “Add entry” to create the first one.')
+      : `${data.total} entr${data.total === 1 ? 'y' : 'ies'}` + (data.total > data.entries.length ? `, showing the first ${data.entries.length}. Search to narrow the list.` : '.');
+    for (const entry of data.entries) {
+      const row = el('tr');
+      for (const field of spec.columns) row.append(el('td', '', entry[field] || ''));
+      const actions = el('td', 'actions');
+      const edit = el('button', 'btn small', 'Edit'), remove = el('button', 'btn small danger', 'Delete');
+      edit.type = remove.type = 'button';
+      edit.onclick = () => openEditor(entry);
+      remove.onclick = () => askDelete(entry);
+      remove.style.marginLeft = '6px';
+      actions.append(edit, remove);
+      row.append(actions);
+      body.append(row);
+    }
+  } catch (error) {
+    $('count').textContent = error.message;
+  }
+}
+
+function openEditor(entry) {
+  editing = entry;
+  const spec = KINDS[kind], box = $('editor-fields');
+  $('editor-title').textContent = (entry ? 'Edit ' : 'Add ') + spec.name;
+  $('editor-error').textContent = '';
+  box.replaceChildren();
+  for (const [field, text, options] of spec.fields) {
+    const wrap = el('div', options.long ? 'full' : '');
+    const caption = el('label', 'field', text + (options.required ? ' *' : ''));
+    const input = el(options.long ? 'textarea' : 'input');
+    if (!options.long) input.type = 'text';
+    input.id = caption.htmlFor = 'f-' + field;
+    input.name = field;
+    input.autocomplete = 'off';
+    if (options.list) input.setAttribute('list', options.list);
+    if (options.required) input.required = true;
+    input.value = (entry && entry[field]) || '';
+    wrap.append(caption, input);
+    box.append(wrap);
+  }
+  editor.showModal();
+  box.querySelector('input, textarea').focus();
+}
+
+$('editor-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const data = {};
+  for (const [field, text, options] of KINDS[kind].fields) {
+    data[field] = $('f-' + field).value.trim();
+    if (options.required && !data[field]) { $('editor-error').textContent = `${text} is required.`; $('f-' + field).focus(); return; }
+  }
+  const save = $('editor-save');
+  save.disabled = true;
+  try {
+    await api(editing ? 'PUT' : 'POST', `/api/entries/${kind}` + (editing ? `/${editing.id}` : ''), data);
+    editor.close();
+    await load();
+    watchStatus();
+  } catch (error) {
+    $('editor-error').textContent = error.message;
+  } finally {
+    save.disabled = false;
+  }
+});
+$('editor-cancel').onclick = () => editor.close();
+
+function askDelete(entry) {
+  deleting = entry;
+  const spec = KINDS[kind];
+  $('confirm-text').textContent = `“${entry[spec.columns[0]]}”` + (entry[spec.columns[1]] ? ` (${entry[spec.columns[1]]})` : '') + ' will be removed from the dataset. This cannot be undone.';
+  $('confirm-error').textContent = '';
+  confirmBox.showModal();
+}
+$('confirm-cancel').onclick = () => confirmBox.close();
+$('confirm-ok').onclick = async () => {
+  try {
+    await api('DELETE', `/api/entries/${kind}/${deleting.id}`);
+    confirmBox.close();
+    await load();
+    watchStatus();
+  } catch (error) {
+    $('confirm-error').textContent = error.message;
+  }
+};
+
+async function watchStatus() {
+  clearTimeout(statusTimer);
+  try {
+    const status = await api('GET', '/api/graph-status');
+    const pill = $('status');
+    pill.className = 'status' + (status.state === 'ready' ? '' : ' ' + status.state);
+    pill.textContent = status.state === 'updating' ? 'Updating the synonym graph…'
+      : status.state === 'error' ? 'Graph update failed: ' + status.error
+      : 'Synonym graph is up to date';
+    if (status.state === 'updating') statusTimer = setTimeout(watchStatus, 1500);
+  } catch { /* the next action will report it */ }
+}
+
+for (const radio of document.querySelectorAll('input[name=kind]')) {
+  radio.addEventListener('change', () => { kind = radio.value; filter.value = ''; load(); });
+}
+filter.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(load, 250); });
+$('add').onclick = () => openEditor(null);
+function toggle(button, panel) {
+  Keyboard.mount(panel);
+  button.onclick = () => { panel.hidden = !panel.hidden; button.setAttribute('aria-expanded', String(!panel.hidden)); };
+}
+toggle($('kb-toggle'), $('kb'));
+toggle($('editor-kb-toggle'), $('editor-kb'));
+load();
+watchStatus();
+</script>
+{% endblock %}

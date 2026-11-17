@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+    <p class="eyebrow">Kriyanighantu</p>
+    <h1>A Thesaurus of Synonymous Sanskrit Verbs</h1>
+    <p class="lead">Explore Sanskrit verbs, roots, meanings, and their semantic relationships in a scholarly research interface.</p>
+
+    <div class="cards">
+      <a class="card" href="{{ url_for('synonyms_page') }}">
+        <span class="tile" aria-hidden="true">अ</span>
+        <span class="finder-title">Synonym Finder</span>
+        <span class="finder-text">Search by root, verb or English meaning and see every synonym of a verb.</span>
+      </a>
+      <a class="card" href="{{ url_for('context_page') }}">
+        <span class="tile" aria-hidden="true">अ</span>
+        <span class="finder-title">Context-Aware Synonym Finder</span>
+        <span class="finder-text">Give a passage and a word. The context decides which meaning is meant, and the synonyms follow it.</span>
+      </a>
+      <a class="card" href="{{ url_for('portal_page') }}">
+        <span class="badge">Login required</span>
+        <span class="tile" aria-hidden="true">अ</span>
+        <span class="finder-title">Data Entry Portal</span>
+        <span class="finder-text">Add, edit and delete verbs, roots and meanings in the dataset.</span>
+      </a>
+    </div>
+
+    <section class="block" id="about">
+      <h2 class="section-title">Professional Sanskrit research, made accessible.</h2>
+      <p>Kriyanighantu blends elegant design with rich Sanskrit verb, root and synonym discovery. Use the search features to navigate linguistic meaning across verbs, roots, and English glosses.</p>
+    </section>
+
+    <div class="two-col">
+      <section id="sources">
+        <h3 class="sub-title">Sources</h3>
+        <p>Derived from Sanskrit verb taxonomy, root declensions, and lookup references.</p>
+      </section>
+      <section id="contact">
+        <h3 class="sub-title">Contact</h3>
+        <p>For access and research support, use the admin interface.</p>
+      </section>
+    </div>
+{% endblock %}

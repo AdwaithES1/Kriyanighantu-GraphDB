@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+    <p class="eyebrow">Kriyanighantu</p>
+    <h1 style="font-size: 2rem">{{ title }}</h1>
+    <p class="lead">{{ message }}</p>
+    <a class="btn primary" href="{{ url_for('home') }}">Go to the home page</a>
+{% endblock %}
