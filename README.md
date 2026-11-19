@@ -5,7 +5,7 @@ A thesaurus of synonymous Sanskrit verbs, in one web app on one port, backed by 
 | Part | Address | Login | What it does |
 |---|---|---|---|
 | Home | `/` | no | The three options below |
-| Synonym Finder | `/synonyms` | no | Search by root, verb or English meaning; shows every synonym of a verb, grouped by meaning |
+| Kriyanighantu (synonym search) | `/synonyms` | no | Search by root, verb or English meaning; shows every synonym of a verb, grouped by meaning |
 | Context-Aware Synonym Finder | `/context` | no | Reads a passage (typed, .txt or PDF) and picks the synonym that fits the context, or finds a word's synonyms inside the passage |
 | Data Entry Portal | `/data-entry` | yes | Add, edit and delete verbs, roots and meanings |
 
@@ -122,7 +122,7 @@ After changing the hand-made Sanskrit rules in `pipeline/lexicon.py`, rebuild th
 
 ## Using the finders
 
-**Synonym Finder.** Choose Root, Verb or Meaning, type a word (an on-screen Devanagari keyboard is available) and open
+**Kriyanighantu (synonym search).** Choose Root, Verb or Meaning, type a word (an on-screen Devanagari keyboard is available) and open
 a result. A verb shows its synonyms for each of its meanings, then its dataset details. A root shows its verbs.
 A meaning shows the verbs listed under it, other verbs that share it, and related meanings.
 
@@ -151,7 +151,7 @@ meaning in `cases.json`. `python test_data/run_cases.py` scores them all and wri
 | `pipeline/load_neo4j.py`, `settings.py` | Writes the graph into Neo4j; reads `.env` |
 | `text_synonyms.py`, `synonyms.py` | Context reading and synonym ranking; both also work from the command line (`--help`) |
 | `webapp/app.py` | All pages and APIs, login, background graph rebuild |
-| `webapp/thesaurus.py`, `finder.py` | Synonym Finder queries; Context Finder answers |
+| `webapp/thesaurus.py`, `finder.py` | Kriyanighantu search queries; Context Finder answers |
 | `webapp/templates/`, `static/` | Pages (shared layout in `base.html`), styles, Devanagari keyboard |
 | `tests/`, `test_data/` | Unit tests; generated test paragraphs |
 | `docs/`, `misc/` | The report; the proposed schema |
